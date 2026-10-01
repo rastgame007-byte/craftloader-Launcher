@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>CraftLoader</title>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#141922; --panel2:#1a212c; --border:#26303d; --border2:#33404f;
+  --text:#e6edf3; --muted:#8b98a9; --muted2:#5d6b7d;
+  --accent:#4ade80; --accent-dim:rgba(74,222,128,.14);
+  --gold:#f2c94c; --red:#f87171; --blue:#7dd3fc; --purple:#b78bf2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:radial-gradient(1100px 480px at 85% -10%,rgba(74,222,128,.05),transparent 60%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.5;overflow:hidden}
+::selection{background:rgba(74,222,128,.25)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2a3542;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#37455a}
+::-webkit-scrollbar-track{background:transparent}
+.hidden{display:none !important}
+
+/* ---------- иконки ---------- */
+.ic{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2.5px}
+.ic.lg{width:20px;height:20px}
+.ic.xl{width:26px;height:26px}
+.ic.fill{fill:currentColor;stroke:none}
+.ic.spin{animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ---------- каркас ---------- */
+.app{display:flex;height:100vh}
+.side{width:216px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;padding:2px 10px 18px}
+.logo .v{font-size:9.5px;font-weight:700;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(74,222,128,.3);padding:1px 7px;border-radius:99px}
+nav{display:flex;flex-direction:column;gap:4px}
+.nav{appearance:none;font:inherit;font-size:14px;font-weight:700;text-align:left;color:var(--muted);background:transparent;border:none;border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:.15s}
+.nav:hover{color:var(--text);background:var(--panel2)}
+.nav.active{color:var(--accent);background:var(--accent-dim)}
+.sidefoot{margin-top:auto;padding:10px}
+.sidepath{font-size:11px;color:var(--muted2);background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:7px 9px;cursor:pointer;word-break:break-all;line-height:1.4}
+.sidepath:hover{border-color:var(--border2)}
+.content{flex:1;overflow-y:auto;min-width:0}
+
+.page{display:none;padding:26px 28px 44px;max-width:1220px;animation:fadein .2s ease}
+.page.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+h1{font-size:23px;font-weight:800;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13.5px;margin-bottom:20px;max-width:700px}
+
+.setupbar{margin:14px 28px 0;background:rgba(242,201,76,.07);border:1px solid rgba(242,201,76,.3);border-radius:12px;padding:11px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13.5px}
+.setupbar b{color:var(--gold)}
+.setupbar code{background:var(--panel);padding:2px 7px;border-radius:6px;font-size:12px;border:1px solid var(--border)}
+
+/* ---------- контролы ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.search{position:relative;flex:1;min-width:230px}
+.search input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);font:inherit;font-size:14.5px;padding:11px 16px 11px 42px;border-radius:12px;outline:none;transition:.15s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.13)}
+.search .sic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted2);display:flex}
+select{appearance:none;background:var(--panel);border:1px solid var(--border);color:var(--text);font:inherit;font-size:13px;font-weight:600;padding:9px 32px 9px 13px;border-radius:11px;outline:none;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b98a9'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
+select:focus{border-color:var(--accent)}
+.btn{appearance:none;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;border-radius:9px;padding:8px 14px;border:1px solid var(--border);background:var(--panel);color:var(--text);transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--accent);background:var(--panel2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#0b0e14}
+.btn.primary:hover{filter:brightness(1.08)}
+.quick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.qchip{appearance:none;font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:transparent;border:1px solid var(--border);padding:5px 12px;border-radius:99px;cursor:pointer;transition:.15s}
+.qchip:hover{color:var(--accent);border-color:rgba(74,222,128,.45)}
+.statusline{color:var(--muted);font-size:12.5px;margin:4px 0 14px}
+
+/* ---------- пагинация ---------- */
+.pager{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:18px}
+.pg{appearance:none;font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:9px;min-width:36px;padding:7px 11px;cursor:pointer;transition:.15s}
+.pg:hover:not(:disabled):not(.cur){border-color:var(--accent);color:var(--text)}
+.pg.cur{color:#0b0e14;background:var(--accent);border-color:var(--accent)}
+.pg:disabled{opacity:.35;cursor:default}
+.pgdots{color:var(--muted2);font-weight:700;padding:0 2px}
+
+/* ---------- карточки ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{position:relative;display:flex;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .15s,transform .15s}
+.card:hover{border-color:rgba(74,222,128,.45);transform:translateY(-2px)}
+.icon{width:56px;height:56px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden}
+.icon img{width:100%;height:100%;object-fit:cover}
+.ava{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;border:1px solid;border-radius:12px;letter-spacing:.5px}
+.cbody{min-width:0;flex:1}
+.ctitle{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ctitle h3{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dl{font-size:11.5px;font-weight:700;color:var(--accent);white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.cats{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.cat{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px solid var(--border);padding:1px 8px;border-radius:99px}
+.cdesc{font-size:12.5px;color:var(--muted);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.star{position:absolute;top:10px;right:10px;appearance:none;background:var(--panel2);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;font-size:13px;cursor:pointer;color:var(--muted2);z-index:2;transition:.15s;display:flex;align-items:center;justify-content:center;padding:0}
+.star:hover{color:var(--gold);border-color:var(--gold)}
+.star.on{color:var(--gold);border-color:rgba(242,201,76,.5);background:rgba(242,201,76,.1)}
+.star.on .ic{fill:currentColor;stroke:currentColor}
+.spin{color:var(--muted);text-align:center;padding:50px 0;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:center}
+.empty{color:var(--muted);text-align:center;padding:44px 0}
+.empty .e{display:block;margin:0 auto 10px;width:34px;height:34px;color:var(--muted2)}
+
+/* ---------- модалка ---------- */
+.modal{position:fixed;inset:0;background:rgba(5,8,13,.72);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 20px;overflow-y:auto}
+.modal.show{display:flex}
+.mpanel{background:var(--panel);border:1px solid var(--border2);border-radius:18px;width:min(880px,100%);max-height:calc(100vh - 60px);display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55);animation:up .22s ease}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.mhead{display:flex;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--border);align-items:flex-start}
+.mhead .icon{width:64px;height:64px;font-size:32px}
+.mhead h2{font-size:19px;font-weight:800;padding-right:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mstats{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin-top:5px}
+.mstats b{color:var(--text)}
+.mstats .g{color:var(--accent)}
+.close{margin-left:auto;appearance:none;background:var(--panel2);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.close:hover{color:var(--text);border-color:var(--red)}
+.mbody{padding:18px 24px;overflow-y:auto}
+.mdesc{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+.mactions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.vrow{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;flex-wrap:wrap}
+.vrow:hover{border-color:var(--border2)}
+.vmain{flex:1;min-width:200px}
+.vnum{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vtag{font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;text-transform:uppercase}
+.vtag.release{color:var(--accent);background:var(--accent-dim);border:1px solid rgba(74,222,128,.35)}
+.vtag.beta{color:var(--gold);background:rgba(242,201,76,.1);border:1px solid rgba(242,201,76,.35)}
+.vtag.alpha{color:var(--muted);background:rgba(139,152,169,.1);border:1px solid var(--border2)}
+.vmeta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.vbtn{background:var(--accent);color:#0b0e14;border:none;font:inherit;font-size:12.5px;font-weight:800;padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.vbtn:hover{filter:brightness(1.08)}
+.vbtn:disabled{background:var(--border2);color:var(--muted);cursor:default}
+.vbtn.done{background:rgba(74,222,128,.15);color:var(--accent);border:1px solid rgba(74,222,128,.4)}
+.vbtn.installed{background:transparent;color:var(--muted);border:1px solid var(--border2);cursor:default}
+.pbar{width:100%;height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:8px;display:none}
+.pbar.show{display:block}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#a7f3d0);border-radius:99px;transition:width .15s;width:0}
+.ptext{font-size:11.5px;color:var(--muted);margin-top:5px;display:none}
+.ptext.show{display:block}
+
+/* ---------- оверлей установки ---------- */
+.ipanel{background:var(--panel);border:1px solid var(--border2);border-radius:18px;width:min(640px,100%);padding:26px 28px;box-shadow:0 24px 70px rgba(0,0,0,.55);animation:up .22s ease}
+.ipanel h2{font-size:19px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.ipanel .phase{color:var(--accent);font-size:13px;font-weight:700;margin-bottom:16px}
+.ipbar{height:10px;background:var(--border);border-radius:99px;overflow:hidden;margin:12px 0 6px}
+.ipbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#a7f3d0);width:0;transition:width .2s}
+.iline{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);gap:14px}
+.ilog{margin-top:16px;background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:10px 14px;font-size:12px;color:var(--muted);max-height:150px;overflow-y:auto;font-family:ui-monospace,Consolas,monospace}
+.ilog div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ilog .err{color:var(--red)}
+.iresult{margin-top:6px}
+.iresult .big{font-size:15px;font-weight:800;margin:14px 0 6px}
+.iresult .big.ok{color:var(--accent)}
+.idir{font-size:12.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;word-break:break-all;margin:10px 0}
+details.skipbox{margin-top:10px;font-size:12.5px;color:var(--muted)}
+details.skipbox summary{cursor:pointer;font-weight:700}
+details.skipbox ul{margin:8px 0 0 18px}
+
+/* ---------- сборки ---------- */
+.packcur{display:flex;gap:16px;align-items:center;background:linear-gradient(140deg,rgba(74,222,128,.09),rgba(123,139,242,.05)),var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:22px;flex-wrap:wrap}
+.packcur .icon{width:60px;height:60px;color:var(--accent);background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3)}
+.packcur .info{flex:1;min-width:220px}
+.packcur h3{font-size:16px;font-weight:800}
+.packcur p{font-size:12.5px;color:var(--muted);margin-top:3px}
+.packcur .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- игра ---------- */
+.gamelaunch{display:flex;gap:18px;align-items:center;background:linear-gradient(140deg,rgba(74,222,128,.1),rgba(125,211,252,.05)),var(--panel);border:1px solid rgba(74,222,128,.3);border-radius:16px;padding:22px 24px;margin-bottom:24px;flex-wrap:wrap}
+.gamelaunch h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px}
+.gamelaunch p{font-size:13px;color:var(--muted);margin-top:3px;word-break:break-all}
+.bigbtn{appearance:none;font:inherit;font-size:15px;font-weight:800;color:#0b0e14;background:var(--accent);border:none;border-radius:13px;padding:14px 26px;cursor:pointer;transition:.15s;margin-left:auto;display:inline-flex;align-items:center;gap:9px}
+.bigbtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.instgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.inst{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 14px;transition:.15s}
+.inst:hover{border-color:var(--border2)}
+.inst .ic{color:var(--accent);width:22px;height:22px}
+.inst b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.inst span{font-size:11.5px;color:var(--muted)}
+.inst .folder{margin-left:auto;appearance:none;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--muted);width:30px;height:30px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.inst .folder:hover{color:var(--text);border-color:var(--accent)}
+.lbadge{font-size:9.5px;font-weight:800;text-transform:uppercase;padding:1px 7px;border-radius:99px}
+.lbadge.vanilla{color:var(--muted);background:rgba(139,152,169,.12);border:1px solid var(--border2)}
+.lbadge.fabric{color:var(--gold);background:rgba(242,201,76,.1);border:1px solid rgba(242,201,76,.35)}
+.lbadge.forge,.lbadge.neoforge{color:var(--red);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3)}
+.lbadge.quilt{color:var(--purple);background:rgba(183,139,242,.1);border:1px solid rgba(183,139,242,.35)}
+.sect{font-size:14px;font-weight:800;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+.sect span{color:var(--muted2);font-weight:600;font-size:12px}
+.hintcard{background:var(--panel);border:1px dashed var(--border2);border-radius:12px;padding:14px 18px;font-size:12.5px;color:var(--muted);margin-top:24px}
+.hintcard b{color:var(--text)}
+
+/* ---------- настройки ---------- */
+.setcard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:14px;max-width:760px}
+.setcard h3{font-size:15px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.setcard p{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.setrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.setrow .path{flex:1;min-width:220px;font-size:12.5px;color:var(--text);background:var(--panel2);border:1px solid var(--border);padding:8px 12px;border-radius:9px;word-break:break-all}
+.setrow input{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--border);color:var(--text);font:inherit;font-size:13px;padding:8px 12px;border-radius:9px;outline:none}
+.setrow input:focus{border-color:var(--accent)}
+.kvlist{font-size:12.5px;color:var(--muted)}
+.kvlist div{padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.06)}
+.kvlist b{color:var(--text)}
+
+#toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--border2);border-left:3px solid var(--accent);border-radius:12px;padding:13px 18px;font-size:13.5px;max-width:430px;box-shadow:0 12px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(12px);transition:.25s;pointer-events:none;z-index:99}
+#toast.show{opacity:1;transform:none}
+#toast.err{border-left-color:var(--red)}
+
+@media(max-width:760px){
+  .app{flex-direction:column}
+  .side{width:100%;flex-direction:row;align-items:center;padding:10px 12px;gap:6px;overflow-x:auto}
+  .logo{padding:0 10px 0 0}
+  nav{flex-direction:row}
+  .nav{padding:8px 10px;font-size:12.5px}
+  .sidefoot{display:none}
+  .page{padding:16px 16px 40px}
+  .setupbar{margin:10px 16px 0}
+}
+/* ==== v2.2: мои сборки + запуск игры ==== */
+.modshint{font-size:12.5px;color:var(--muted);margin:-8px 0 14px;cursor:pointer}
+.modshint b{color:var(--text);font-weight:600;word-break:break-all}
+.modshint .mhopen{color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:12px;margin-left:4px;white-space:nowrap}
+.modshint:hover .mhopen{color:#6ee7a0}
+.launchcard{background:linear-gradient(140deg,rgba(74,222,128,.08),rgba(125,211,252,.04)),var(--panel);border:1px solid rgba(74,222,128,.28);border-radius:16px;padding:22px;margin-bottom:24px}
+.launchcard h2{display:flex;align-items:center;gap:10px;font-size:18px}
+.ltag{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);background:rgba(125,211,252,.1);border:1px solid rgba(125,211,252,.3);border-radius:6px;padding:3px 8px}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 16px}
+.lfield label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+.lfield input,.lfield select{width:100%}
+.lfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px}
+.javachip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:0;max-width:100%}
+.javachip.ok{color:var(--accent);border-color:rgba(74,222,128,.35)}
+.javachip.warn{color:var(--gold);border-color:rgba(242,201,76,.35)}
+.javachip .jpath{color:var(--muted2);font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pppanel{position:relative;background:var(--panel);border:1px solid var(--border2);border-radius:16px;padding:20px;width:390px;max-width:92vw;margin-top:10vh}
+.pppanel h3{font-size:16px;margin-bottom:4px}
+.ppmod{color:var(--muted);font-size:12.5px;margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pprow{display:flex;align-items:center;gap:11px;width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:8px 12px;cursor:pointer;font:inherit;color:var(--text);text-align:left;transition:.15s;margin-bottom:7px}
+.pprow:hover{border-color:var(--border2);background:#202a37}
+.pprow .ava{width:32px;height:32px;font-size:14px;border-radius:9px;flex:none}
+.pprow span{flex:1;font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pprow i{font-style:normal;font-size:11.5px;color:var(--muted);background:var(--bg);border-radius:6px;padding:2px 8px}
+.ppnew{display:flex;align-items:center;gap:8px;width:100%;justify-content:center;background:none;border:1px dashed var(--border2);border-radius:11px;color:var(--muted);font:inherit;font-size:13px;font-weight:700;padding:10px;cursor:pointer;margin-top:4px;transition:.15s}
+.ppnew:hover{color:var(--accent);border-color:var(--accent)}
+.ppempty{color:var(--muted2);font-size:12.5px;margin:4px 0 10px}
+.pmrow{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:9px 12px;margin-bottom:8px}
+.pmrow .ava{width:34px;height:34px;font-size:15px;border-radius:10px;flex:none}
+.pmrow b{font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmrow .vmeta{margin-top:1px}
+.btn.danger{color:var(--red);border-color:rgba(248,113,113,.4)}
+.btn.danger:hover{background:rgba(248,113,113,.12);border-color:var(--red)}
+.vbtn.packadd{background:var(--panel2);color:var(--text);border:1px solid var(--border2);padding:9px 12px}
+.vbtn.packadd:hover{border-color:var(--accent);color:var(--accent)}
+.playmini{background:var(--accent);border:none;color:#0b0e14;border-radius:9px;font:inherit;font-size:11.5px;font-weight:800;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s;flex-shrink:0;white-space:nowrap}
+.playmini:hover{background:#6ee7a0}
+.lpacks{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;margin-bottom:24px}
+.lpack{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 14px;transition:border-color .15s}
+.lpack:hover{border-color:var(--border2)}
+.lpack .ava{width:42px;height:42px;font-size:18px;border-radius:11px;flex:none}
+.lpack .lpbody{min-width:0;flex:1}
+.lpack b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lpack .lpmeta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lpackgo{appearance:none;font:inherit;font-size:13px;font-weight:800;color:#0b0e14;background:var(--accent);border:none;border-radius:10px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:.15s;flex-shrink:0}
+.lpackgo:hover{background:#6ee7a0}
+.lpempty{color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<!-- ===== SVG-спрайт с иконками ===== -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-pack" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7l8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-game" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="5"/><path d="M6.5 10.5h4M8.5 8.5v4"/><circle cx="16" cy="9.5" r=".5"/><circle cx="18.5" cy="12" r=".5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><polyline points="21 3 21 8 16 8"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7l8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 8 8" shape-rendering="crispEdges">
+        <rect width="8" height="8" rx="1.5" fill="#4ab56c"/>
+        <rect x="1" y="2" width="2" height="2" fill="#0f1216"/>
+        <rect x="5" y="2" width="2" height="2" fill="#0f1216"/>
+        <rect x="3" y="4" width="2" height="1" fill="#0f1216"/>
+        <rect x="2" y="5" width="4" height="1" fill="#0f1216"/>
+        <rect x="2" y="6" width="1" height="1" fill="#0f1216"/>
+        <rect x="5" y="6" width="1" height="1" fill="#0f1216"/>
+      </svg>
+      CraftLoader <span class="v">2.2</span>
+    </div>
+    <nav>
+      <button class="nav active" data-page="mods"><svg class="ic"><use href="#i-grid"/></svg>Моды</button>
+      <button class="nav" data-page="packs"><svg class="ic"><use href="#i-pack"/></svg>Сборки</button>
+      <button class="nav" data-page="mypacks"><svg class="ic"><use href="#i-layers"/></svg>Мои сборки</button>
+      <button class="nav" data-page="game"><svg class="ic"><use href="#i-game"/></svg>Игра</button>
+      <button class="nav" data-page="favs"><svg class="ic"><use href="#i-star"/></svg>Избранное</button>
+      <button class="nav" data-page="settings"><svg class="ic"><use href="#i-gear"/></svg>Настройки</button>
+    </nav>
+    <div class="sidefoot"><div class="sidepath" id="sidePath">…</div></div>
+  </aside>
+
+  <div class="content">
+    <div class="setupbar hidden" id="setupBar">
+      <span><b>Папка mods не найдена.</b> Укажи её — стандартная:</span>
+      <code id="stdPath"></code>
+      <button class="btn primary" id="btnCreateStd">Создать её</button>
+      <button class="btn" id="btnManual">Ввести вручную</button>
+    </div>
+
+    <!-- ==================== МОДЫ ==================== -->
+    <section class="page active" id="page-mods">
+      <h1>Моды</h1>
+      <p class="sub">Сотни тысяч модов с Modrinth + CurseForge по ссылке. Листай страницы, фильтруй по загрузчику, версии и категории.</p>
+      <p class="modshint" id="modsHint">Моды скачиваются в: …</p>
+      <div class="toolbar">
+        <div class="search"><span class="sic"><svg class="ic"><use href="#i-search"/></svg></span><input id="q" type="text" placeholder="Найди мод: sodium, JEI, create, iris…"></div>
+        <select id="loader"><option value="">Загрузчик: любой</option><option value="fabric">Fabric</option><option value="forge">Forge</option><option value="quilt">Quilt</option><option value="neoforge">NeoForge</option></select>
+        <select id="mc"><option value="">Версия MC: любая</option></select>
+        <select id="cat"><option value="">Категория: все</option><option value="optimization">Оптимизация</option><option value="technology">Технологии</option><option value="magic">Магия</option><option value="adventure">Приключения</option><option value="utility">Утилиты</option><option value="decoration">Декор</option><option value="worldgen">Мир</option><option value="storage">Хранение</option><option value="food">Еда</option><option value="equipment">Экипировка</option><option value="transportation">Транспорт</option><option value="economy">Экономика</option><option value="social">Мультиплеер</option></select>
+        <select id="sort"><option value="downloads">По популярности</option><option value="relevance">По релевантности</option><option value="updated">Свежие обновления</option><option value="newest">Новые моды</option></select>
+        <button class="btn" id="btnUpdates"><svg class="ic"><use href="#i-refresh"/></svg>Обновления</button>
+      </div>
+      <div class="quick" id="quick"></div>
+      <div class="statusline" id="status"></div>
+      <div class="grid" id="results"></div>
+      <div class="pager" id="modPager"></div>
+
+      <div class="setcard hidden" id="updPanel" style="margin-top:18px">
+        <h3><svg class="ic"><use href="#i-refresh"/></svg>Обновления модов <span id="updCount" style="color:var(--gold);font-size:13px"></span></h3>
+        <div id="updList"></div>
+        <div class="setrow" style="margin-top:12px">
+          <button class="btn primary" id="updAll"><svg class="ic"><use href="#i-up"/></svg>Обновить всё</button>
+          <button class="btn" id="updClose">Закрыть</button>
+        </div>
+      </div>
+
+      <div class="setcard" style="margin-top:18px">
+        <h3><svg class="ic" style="color:#fb923c"><use href="#i-globe"/></svg>Мод с CurseForge</h3>
+        <p>Вставь ссылку вида curseforge.com/minecraft/mc-mods/jei, слаг или ID проекта — найдётся то, чего нет на Modrinth.</p>
+        <div class="setrow">
+          <input id="cfInput" type="text" placeholder="curseforge.com/minecraft/mc-mods/jei или 238222" spellcheck="false">
+          <button class="btn primary" id="cfGo"><svg class="ic"><use href="#i-search"/></svg>Найти</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== СБОРКИ ==================== -->
+    <section class="page" id="page-packs">
+      <h1>Готовые сборки</h1>
+      <p class="sub">Тысячи модпаков с Modrinth и CurseForge — с пагинацией. Куда ставить: отдельная папка (рекомендую) или прямо в .minecraft.</p>
+
+      <div class="packcur" id="curatedRow"></div>
+
+      <div class="toolbar">
+        <div class="search"><span class="sic"><svg class="ic"><use href="#i-search"/></svg></span><input id="pq" type="text" placeholder="Поиск сборки: optimization, rpg, create, magic…"></div>
+        <select id="pMc"><option value="">Версия MC: любая</option></select>
+        <select id="pSort"><option value="downloads">По популярности</option><option value="relevance">По релевантности</option><option value="newest">Новые</option><option value="updated">Обновлённые</option></select>
+      </div>
+      <div class="quick" id="pQuick"></div>
+      <div class="statusline" id="pStatus"></div>
+      <div class="grid" id="pResults"></div>
+      <div class="pager" id="packPager"></div>
+
+      <div class="setcard" style="margin-top:18px">
+        <h3><svg class="ic" style="color:#fb923c"><use href="#i-globe"/></svg>Сборка с CurseForge</h3>
+        <p>Ссылка вида curseforge.com/minecraft/modpacks/rlcraft — установлю как обычную сборку.</p>
+        <div class="setrow">
+          <input id="cfpInput" type="text" placeholder="curseforge.com/minecraft/modpacks/rlcraft" spellcheck="false">
+          <button class="btn primary" id="cfpGo"><svg class="ic"><use href="#i-search"/></svg>Найти сборку</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== МОИ СБОРКИ ==================== -->
+    <section class="page" id="page-mypacks">
+      <h1>Мои сборки</h1>
+      <p class="sub">Собери свой набор модов: жми «＋» у версии мода — он попадёт в сборку. Потом установишь и запустишь одной кнопкой.</p>
+      <div class="setrow" style="margin:0 0 16px">
+        <button class="btn primary" id="mpNew"><svg class="ic"><use href="#i-plus"/></svg>Новая сборка</button>
+        <button class="btn" id="mpFromMods"><svg class="ic"><use href="#i-folder"/></svg>Собрать из папки mods</button>
+      </div>
+      <div class="grid" id="mpGrid"></div>
+    </section>
+
+    <!-- ==================== ИГРА ==================== -->
+    <section class="page" id="page-game">
+      <h1>Игра</h1>
+      <p class="sub">Запуск лаунчера и обзор установленных версий Minecraft.</p>
+      <div class="launchcard">
+        <h2><svg class="ic lg" style="color:var(--accent)"><use href="#i-game"/></svg>Запуск Minecraft <span class="ltag">offline</span></h2>
+        <p class="sub" style="margin:6px 0 0">Скачаю файлы игры с серверов Mojang и запущу с твоим ником — без лаунчера и без аккаунта. Vanilla, Fabric и Quilt. Forge-сборки запускай через Prism.</p>
+        <div class="lgrid">
+          <div class="lfield"><label>Ник</label><input id="lnNick" maxlength="16" placeholder="Steve" spellcheck="false"></div>
+          <div class="lfield"><label>Версия</label><select id="lnVer"><option>…</option></select></div>
+          <div class="lfield"><label>Загрузчик</label><select id="lnLoader"><option value="vanilla">Vanilla</option><option value="fabric" selected>Fabric</option><option value="quilt">Quilt</option></select></div>
+          <div class="lfield"><label>Версия загрузчика</label><select id="lnLVer"><option value="">последняя стабильная</option></select></div>
+          <div class="lfield"><label>Память</label><select id="lnRam"><option>2</option><option selected>4</option><option>6</option><option>8</option><option>16</option></select></div>
+          <div class="lfield"><label>Папка игры</label><select id="lnDir"><option value="">Отдельная папка CraftLoader</option></select></div>
+        </div>
+        <div class="lfoot">
+          <span class="javachip" id="lnJava">Java: проверяю…</span>
+          <button class="btn hidden" id="lnJavaDl"><svg class="ic"><use href="#i-dl"/></svg>Скачать Java</button>
+          <span style="flex:1"></span>
+          <button class="bigbtn" id="btnRunGame"><svg class="ic"><use href="#i-play"/></svg>Запустить</button>
+        </div>
+      </div>
+      <div class="sect"><svg class="ic"><use href="#i-layers"/></svg>Мои сборки <span>· выбери, какую запустить</span></div>
+      <div class="lpacks" id="lpMy"></div>
+      <div class="sect"><svg class="ic"><use href="#i-pack"/></svg>Сборки CraftLoader <span>· установленные через приложение</span></div>
+      <div class="instgrid" id="clInst"></div>
+      <div class="sect"><svg class="ic"><use href="#i-layers"/></svg>Версии .minecraft <span>· найденные профили</span></div>
+      <div class="instgrid" id="mcVers"></div>
+      <div class="sect"><svg class="ic"><use href="#i-cube"/></svg>Prism Launcher <span>· если стоит</span></div>
+      <div class="instgrid" id="prismInst"></div>
+      <div class="hintcard">
+        <b>Как это работает:</b> CraftLoader сам качает версию игры, ассеты и библиотеки в свою папку и запускает javaw с оффлайн-ником (без пароля). Свои сборки запускаются прямо здесь — выбери карточку выше. Готовые Forge/NeoForge-модпаки по-прежнему удобно запускать через Prism Launcher — файлы сборки уже лежат в отдельной папке.
+      </div>
+    </section>
+
+    <!-- ==================== ИЗБРАННОЕ ==================== -->
+    <section class="page" id="page-favs">
+      <h1>Избранное</h1>
+      <p class="sub">Моды и сборки, отмеченные звёздочкой.</p>
+      <div class="grid" id="favGrid"></div>
+    </section>
+
+    <!-- ==================== НАСТРОЙКИ ==================== -->
+    <section class="page" id="page-settings">
+      <h1>Настройки</h1>
+      <p class="sub">Папки, источники и данные приложения.</p>
+      <div class="setcard">
+        <h3><svg class="ic"><use href="#i-folder"/></svg>Папка mods</h3>
+        <p>Куда скачиваются одиночные моды.</p>
+        <div class="setrow">
+          <span class="path" id="setPath">…</span>
+          <button class="btn" id="setEdit"><svg class="ic"><use href="#i-gear"/></svg>Изменить</button>
+          <button class="btn" id="setOpen"><svg class="ic"><use href="#i-folder"/></svg>Открыть</button>
+        </div>
+        <div class="setrow hidden" id="setEditRow" style="margin-top:10px">
+          <input id="setPathInput" type="text" placeholder="C:\Users\...\mods" spellcheck="false">
+          <button class="btn primary" id="setPathSave">Сохранить</button>
+        </div>
+      </div>
+      <div class="setcard">
+        <h3><svg class="ic"><use href="#i-db"/></svg>Данные CraftLoader</h3>
+        <p>Конфиг, лог и папка сборок.</p>
+        <div class="setrow">
+          <span class="path" id="setCfg">…</span>
+          <button class="btn" id="setOpenCfg"><svg class="ic"><use href="#i-folder"/></svg>Открыть</button>
+        </div>
+      </div>
+      <div class="setcard">
+        <h3><svg class="ic"><use href="#i-globe"/></svg>Источники модов</h3>
+        <div class="kvlist">
+          <div><b>Modrinth</b> — полный поиск и скачивание, сотни тысяч модов и сборок</div>
+          <div><b>CurseForge</b> — по ссылке/слагу/ID через CFWidget и CDN CurseForge</div>
+        </div>
+      </div>
+      <div class="setcard">
+        <h3><svg class="ic"><use href="#i-info"/></svg>О программе</h3>
+        <div class="kvlist">
+          <div>CraftLoader <b>2.1</b> — моды, сборки, обновления, пагинация</div>
+          <div>Фанатский проект. Не связан с Mojang, Microsoft, Modrinth и CurseForge.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ==================== МОДАЛКА ==================== -->
+<div class="modal" id="modal">
+  <div class="mpanel">
+    <div class="mhead">
+      <div class="icon" id="mIcon"></div>
+      <div style="min-width:0;flex:1">
+        <h2 id="mTitle"><span id="mTitleText">…</span> <button class="star" id="mStar" style="position:static"><svg class="ic"><use href="#i-star"/></svg></button></h2>
+        <div class="mstats" id="mStats"></div>
+      </div>
+      <button class="close" id="mClose"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="mbody">
+      <p class="mdesc" id="mDesc"></p>
+      <div class="mactions" id="mActions"></div>
+      <div class="setcard hidden" id="mPackCtl" style="margin:0 0 16px">
+        <h3 style="font-size:13.5px"><svg class="ic"><use href="#i-gear"/></svg>Куда установить</h3>
+        <div class="setrow" style="margin-bottom:0">
+          <select id="pkDest" style="flex:1;min-width:180px">
+            <option value="instance">Отдельная папка CraftLoader (рекомендую)</option>
+            <option value="minecraft">Прямо в .minecraft (моды + ресурсы)</option>
+            <option value="file">Только скачать архив (.mrpack/.zip)</option>
+          </select>
+          <label class="lbl" style="font-size:12px;color:var(--muted);font-weight:700"><input type="checkbox" id="pkOpt"> включая необязательные моды</label>
+        </div>
+      </div>
+      <div id="mVersions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ВЫБОР СБОРКИ (мини) ==================== -->
+<div class="modal" id="pickPack">
+  <div class="pppanel">
+    <button class="close" id="ppClose"><svg class="ic"><use href="#i-x"/></svg></button>
+    <h3>Добавить в сборку</h3>
+    <p class="ppmod" id="ppMod"></p>
+    <div id="ppList"></div>
+    <button class="ppnew" id="ppNew"><svg class="ic"><use href="#i-plus"/></svg>Новая сборка</button>
+  </div>
+</div>
+
+<!-- ==================== ДЕТАЛИ МОЕЙ СБОРКИ ==================== -->
+<div class="modal" id="packModal">
+  <div class="mpanel">
+    <div class="mhead">
+      <div class="icon"><svg class="ic" style="width:26px;height:26px;color:var(--accent)"><use href="#i-layers"/></svg></div>
+      <div style="min-width:0;flex:1">
+        <h2 id="pkName">Сборка</h2>
+        <div class="mstats" id="pkMeta"></div>
+      </div>
+      <button class="close" id="pmClose"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="mbody">
+      <div class="setrow" style="margin-bottom:14px;flex-wrap:wrap">
+        <input id="pmName" placeholder="Название" spellcheck="false" style="flex:2;min-width:150px">
+        <select id="pmMc" style="flex:1;min-width:110px"></select>
+        <select id="pmLoader" style="flex:1;min-width:100px"><option value="fabric">Fabric</option><option value="quilt">Quilt</option><option value="vanilla">Vanilla</option><option value="forge">Forge</option><option value="neoforge">NeoForge</option></select>
+        <button class="btn" id="pmSave"><svg class="ic"><use href="#i-check"/></svg>Сохранить</button>
+      </div>
+      <div id="pmMods"></div>
+      <div class="setrow" style="margin-top:16px;flex-wrap:wrap">
+        <button class="btn primary" id="pmRun"><svg class="ic"><use href="#i-play"/></svg>Установить и запустить</button>
+        <button class="btn" id="pmInstall"><svg class="ic"><use href="#i-dl"/></svg>Только установить</button>
+        <span style="flex:1"></span>
+        <button class="btn danger" id="pmDelete"><svg class="ic"><use href="#i-trash"/></svg>Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ОВЕРЛЕЙ УСТАНОВКИ ==================== -->
+<div class="modal" id="install">
+  <div class="ipanel">
+    <h2 id="iTitle">Установка</h2>
+    <div class="phase" id="iPhase">Подготовка…</div>
+    <div id="iProgressBox">
+      <div class="ipbar"><i id="iBar"></i></div>
+      <div class="iline"><span id="iLabel">…</span><span id="iCount"></span></div>
+    </div>
+    <div class="ilog" id="iLog"></div>
+    <div class="iresult hidden" id="iResult"></div>
+    <div class="setrow" style="margin-top:18px">
+      <button class="btn primary hidden" id="iOpen"><svg class="ic"><use href="#i-folder"/></svg>Открыть папку</button>
+      <button class="btn hidden" id="iClose">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const PER_PAGE = 40;
+const state = {
+  installed: new Set(),
+  favs: new Set(),
+  favList: [],
+  tags: {versions: []},
+  allVersions: false,
+  cur: null,
+  cfAllVersions: [],
+  instances: null,
+  modPage: 1, modPages: 1, modTotal: 0,
+  packPage: 1, packPages: 1, packTotal: 0,
+  mypacks: null,
+  launchInfo: null,
+  curPack: null
+};
+
+/* ============ утилиты ============ */
+function fmtNum(n){ n = n||0; if(n>=1e6)return (n/1e6).toFixed(1).replace('.0','')+'M'; if(n>=1e3)return (n/1e3).toFixed(1).replace('.0','')+'K'; return String(n); }
+function fmtSize(b){ if(b>=1048576)return (b/1048576).toFixed(1)+' МБ'; if(b>=1024)return Math.round(b/1024)+' КБ'; return b+' Б'; }
+function fmtDate(s){ try{ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'2-digit'}); }catch(e){ return ''; } }
+function esc(s){ return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let toastTimer;
+function toast(msg, isErr){
+  const t = $('toast'); t.textContent = msg; t.className = 'show'+(isErr?' err':'');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.className='', 4000);
+}
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+  return data;
+}
+const PHASES = {'pack-download':'Скачиваю архив сборки…','install':'Устанавливаю файлы…','update':'Обновляю мод…','download':'Скачиваю…','launch-download':'Скачиваю файлы игры…','launch-java':'Скачиваю Java…','launch':'Запускаю Minecraft…'};
+
+/* цветная аватарка-буква, если у мода нет иконки */
+function hueOf(s){ let h=0; for(const c of String(s||'?')) h=(h*31+c.charCodeAt(0))%360; return h; }
+function avatar(title, slug){
+  const h = hueOf(slug||title);
+  const L = String(title||'?').trim().charAt(0).toUpperCase() || '?';
+  return '<div class="ava" style="background:linear-gradient(140deg,hsl('+h+' 42% 24%),hsl('+((h+45)%360)+' 48% 13%));border-color:hsl('+h+' 50% 38%)"><span style="color:hsl('+h+' 85% 72%)">'+esc(L)+'</span></div>';
+}
+function iconBox(iconUrl, title, slug){
+  return '<div class="icon" data-title="'+esc(title||'')+'" data-slug="'+esc(slug||'')+'">'+
+    (iconUrl ? '<img src="'+esc(iconUrl)+'" loading="lazy" referrerpolicy="no-referrer">' : avatar(title, slug))+'</div>';
+}
+/* если картинка не загрузилась — подставляем аватарку */
+document.addEventListener('error', function(e){
+  const t = e.target;
+  if (t && t.tagName === 'IMG' && t.parentElement && t.parentElement.classList.contains('icon')){
+    const box = t.parentElement;
+    box.innerHTML = avatar(box.dataset.title, box.dataset.slug);
+  }
+}, true);
+
+/* ============ навигация ============ */
+document.querySelectorAll('.nav').forEach(b => b.addEventListener('click', () => gotoPage(b.dataset.page)));
+function gotoPage(id){
+  document.querySelectorAll('.nav').forEach(b => b.classList.toggle('active', b.dataset.page===id));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id==='page-'+id));
+  if (id==='game' && !state.instances) loadGame();
+  if (id==='game') loadLaunchInfo();
+  if (id==='mypacks') loadMyPacks();
+  if (id==='favs') renderFavs();
+  if (id==='settings') refreshConfig();
+}
+
+/* ============ пагинация ============ */
+function renderPager(el, page, pages, cb){
+  if (pages <= 1){ el.innerHTML=''; return; }
+  const btn = (p, label, cls, dis) =>
+    '<button class="pg'+(cls||'')+'" data-p="'+p+'"'+(dis?' disabled':'')+'>'+(label||p)+'</button>';
+  let html = btn(page-1, '<svg class="ic" style="width:13px;height:13px"><use href="#i-chev-l"/></svg>', '', page<=1);
+  const win = 2;
+  const nums = new Set([1, pages, page]);
+  for(let i=1;i<=win;i++){ nums.add(page-i); nums.add(page+i); }
+  let sorted = [...nums].filter(n=>n>=1&&n<=pages).sort((a,b)=>a-b);
+  let prev = 0;
+  for(const n of sorted){
+    if (n-prev > 1) html += '<span class="pgdots">…</span>';
+    html += btn(n, n, n===page?' cur':'');
+    prev = n;
+  }
+  html += btn(page+1, '<svg class="ic" style="width:13px;height:13px"><use href="#i-chev-r"/></svg>', '', page>=pages);
+  el.innerHTML = html;
+  el.querySelectorAll('.pg').forEach(b => b.addEventListener('click', ()=>{
+    const p = +b.dataset.p;
+    if (p>=1 && p<=pages && p!==page){ cb(p); }
+  }));
+}
+
+/* ============ конфиг ============ */
+async function refreshConfig(){
+  try{
+    const c = await api('/api/config');
+    const p = c.path ? c.path : 'папка mods не задана';
+    $('sidePath').textContent = p; $('sidePath').title = c.path||'';
+    $('setPath').textContent = c.path || 'не задана';
+    $('setCfg').textContent = 'папка сборок: ' + c.instances;
+    $('setupBar').classList.toggle('hidden', !!c.path);
+    if (!c.path) $('stdPath').textContent = (c.candidates&&c.candidates[0])||'';
+    const mh = $('modsHint');
+    if (mh){
+      mh.innerHTML = 'Моды скачиваются в: <b>'+esc(c.path||'—')+'</b> <span class="mhopen">открыть папку</span>';
+      mh.onclick = ()=>{ if(c.path) api('/api/openfolder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:c.path})}).catch(e=>toast(e.message,true)); };
+    }
+  }catch(e){}
+}
+$('sidePath').addEventListener('click', ()=>gotoPage('settings'));
+$('btnManual').addEventListener('click', ()=>{ gotoPage('settings'); $('setEdit').click(); });
+$('btnCreateStd').addEventListener('click', async ()=>{
+  const p = $('stdPath').textContent; if(!p) return;
+  try{
+    await api('/api/path',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});
+    await refreshConfig(); await refreshInstalled(); toast('Папка создана: '+p);
+  }catch(e){ toast(e.message,true); }
+});
+async function refreshInstalled(){
+  try{ const d = await api('/api/installed'); state.installed = new Set(d.mods||[]); }catch(e){}
+}
+async function refreshFavs(){
+  try{
+    const d = await api('/api/favorites');
+    state.favs = new Set((d.favorites||[]).map(f=>f.source+'|'+f.slug));
+    state.favList = d.favorites||[];
+  }catch(e){}
+}
+async function toggleFav(source, slug, title, icon){
+  const key = source+'|'+slug;
+  const add = !state.favs.has(key);
+  try{
+    await api('/api/favorites',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:add?'add':'remove',source,slug,title,icon})});
+    if(add){ state.favs.add(key); state.favList.push({source,slug,title,icon}); }
+    else { state.favs.delete(key); state.favList = state.favList.filter(f=>!(f.source===source&&f.slug===slug)); }
+    return add;
+  }catch(e){ toast(e.message,true); return !add; }
+}
+
+/* ============ теги ============ */
+async function loadTags(){
+  try{
+    const t = await api('/api/tags');
+    state.tags = t;
+    [ ['mc','MC '], ['pMc','MC '] ].forEach(([id,p])=>{
+      (t.versions||[]).forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=p+v; $(id).appendChild(o); });
+    });
+  }catch(e){}
+}
+
+/* ============ ПОИСК МОДОВ ============ */
+let searchTimer;
+function resetModPage(){ state.modPage = 1; }
+$('q').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{resetModPage();doSearch();},350);});
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter'){clearTimeout(searchTimer);resetModPage();doSearch();}});
+['loader','mc','sort','cat'].forEach(id=>$(id).addEventListener('change',()=>{resetModPage();doSearch();}));
+const QUICK = ['Sodium','Fabric API','Iris','JEI','Create',"Xaero's Minimap",'Lithium','Terralith','Distant Horizons','Farmer\'s Delight'];
+$('quick').innerHTML = QUICK.map(q=>'<button class="qchip">'+q+'</button>').join('');
+document.querySelectorAll('#quick .qchip').forEach(b=>b.addEventListener('click',()=>{$('q').value=b.textContent;resetModPage();doSearch();}));
+
+async function doSearch(page){
+  if (page) state.modPage = page;
+  const q = $('q').value.trim();
+  const params = new URLSearchParams({
+    q, loader:$('loader').value, mc:$('mc').value, cat:$('cat').value,
+    index: $('sort').value==='relevance'&&!q ? 'downloads' : $('sort').value,
+    type:'mod', offset:(state.modPage-1)*PER_PAGE
+  });
+  $('status').textContent = 'Ищу…';
+  $('results').innerHTML = '<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg>Загружаю…</div>';
+  $('modPager').innerHTML='';
+  try{
+    const d = await api('/api/search?'+params);
+    const hits = d.hits||[];
+    state.modTotal = d.total_hits||hits.length;
+    state.modPages = Math.min(Math.max(1, Math.ceil(state.modTotal/PER_PAGE)), 250);
+    const f = state.modPage===1 && state.modPages>1 ? '' : ' · страница '+state.modPage+' из '+state.modPages;
+    $('status').textContent = (q ? ('По запросу «'+q+'» найдено '+fmtNum(state.modTotal)) : ('Популярные моды · всего '+fmtNum(state.modTotal)))
+      + ($('loader').value?' · '+$('loader').value:'') + ($('mc').value?' · MC '+$('mc').value:'') + ($('cat').value?' · '+$('cat').selectedOptions[0].text:'') + f;
+    if(!hits.length){
+      $('results').innerHTML = '<div class="empty"><svg class="e"><use href="#i-search"/></svg>Ничего не нашлось — попробуй другой запрос или сними фильтры.</div>';
+      return;
+    }
+    $('results').innerHTML = hits.map(h=>{
+      const fav = state.favs.has('modrinth|'+h.slug);
+      const cats = (h.categories||[]).slice(0,3).map(c=>'<span class="cat">'+c+'</span>').join('');
+      return '<div class="card" data-slug="'+h.slug+'">'+
+        '<button class="star'+(fav?' on':'')+'" data-fav="modrinth|'+h.slug+'|'+esc(h.title)+'"><svg class="ic"><use href="#i-star"/></svg></button>'+
+        iconBox(h.icon_url, h.title, h.slug)+
+        '<div class="cbody"><div class="ctitle"><h3>'+esc(h.title)+'</h3><span class="dl"><svg class="ic" style="width:11px;height:11px"><use href="#i-dl"/></svg>'+fmtNum(h.downloads)+'</span></div>'+
+        '<div class="cats">'+cats+'</div><div class="cdesc">'+esc(h.description||'')+'</div></div></div>';
+    }).join('');
+    document.querySelectorAll('#results .card').forEach(c=>c.addEventListener('click',()=>openMod('modrinth',c.dataset.slug)));
+    document.querySelectorAll('#results .star').forEach(s=>s.addEventListener('click',e=>{
+      e.stopPropagation();
+      const [src,slug,title]=s.dataset.fav.split('|');
+      toggleFav(src,slug,title).then(add=>s.classList.toggle('on',add));
+    }));
+    renderPager($('modPager'), state.modPage, state.modPages, p=>{ doSearch(p); $('results').scrollIntoView({behavior:'smooth',block:'start'}); });
+  }catch(e){ $('results').innerHTML = '<div class="empty">'+esc(e.message)+'</div>'; }
+}
+
+/* ============ CurseForge мод по ссылке ============ */
+$('cfGo').addEventListener('click', async ()=>{
+  const input = $('cfInput').value.trim();
+  if(!input) return;
+  $('cfGo').disabled = true;
+  try{
+    const d = await api('/api/cf/project?input='+encodeURIComponent(input));
+    openMod('cf', String(d.slug), d);
+  }catch(e){ toast('CurseForge: '+e.message, true); }
+  finally{ $('cfGo').disabled = false; }
+});
+$('cfInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('cfGo').click(); });
+
+/* ============ МОДАЛКА ============ */
+async function openMod(source, slug, preset){
+  state.cur = {source, slug};
+  state.allVersions = false;
+  state.cfAllVersions = [];
+  $('modal').classList.add('show');
+  $('mPackCtl').classList.add('hidden');
+  $('mTitleText').textContent = '…';
+  $('mStats').innerHTML = ''; $('mDesc').textContent = 'Загружаю…';
+  $('mVersions').innerHTML = '<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg></div>';
+  try{
+    let p, versions = null;
+    if (source==='cf'){
+      p = preset || await api('/api/cf/project?input='+encodeURIComponent(slug));
+      versions = p.versions||[];
+      state.cfAllVersions = versions;
+      $('mTitleText').innerHTML = esc(p.title)+' <span class="cat" style="background:rgba(248,138,76,.12);border-color:rgba(248,138,76,.4);color:#fb923c">CurseForge</span>';
+    } else {
+      p = await api('/api/project?slug='+encodeURIComponent(slug));
+      $('mTitleText').textContent = p.title;
+    }
+    state.cur.title = p.title; state.cur.icon = p.icon_url||''; state.cur.slug = source==='cf'?String(p.slug):slug;
+    $('mIcon').outerHTML = iconBox(p.icon_url, p.title, state.cur.slug).replace('class="icon"','class="icon" id="mIcon"');
+    const cats = (p.loaders||[]).join(', ');
+    $('mStats').innerHTML =
+      '<span><svg class="ic" style="width:11px;height:11px"><use href="#i-dl"/></svg> <b>'+fmtNum(p.downloads)+'</b></span>'+
+      '<span><svg class="ic" style="width:11px;height:11px"><use href="#i-heart"/></svg> <b>'+fmtNum(p.follows||0)+'</b></span>'+
+      (cats?'<span class="g">'+cats+'</span>':'')+
+      (p.updated?'<span>обновлён <b>'+fmtDate(p.updated)+'</b></span>':'');
+    $('mDesc').textContent = p.description || '';
+    const fav = state.favs.has(source+'|'+state.cur.slug);
+    $('mStar').classList.toggle('on',fav);
+    $('mActions').innerHTML =
+      '<button class="btn" id="mAll"><svg class="ic"><use href="#i-list"/></svg>Показать все версии</button>'+
+      (source==='cf'
+        ? '<button class="btn" id="mLink"><svg class="ic"><use href="#i-ext"/></svg>Открыть на CurseForge</button>'
+        : '<button class="btn" id="mLink"><svg class="ic"><use href="#i-ext"/></svg>Открыть на Modrinth</button>');
+    $('mAll').addEventListener('click', ()=>{
+      state.allVersions = !state.allVersions;
+      $('mAll').childNodes[1].textContent = state.allVersions ? ' Только под мой фильтр' : ' Показать все версии';
+      if (source==='cf') renderCFVersions(); else loadModrinthVersions();
+    });
+    $('mLink').addEventListener('click', ()=>{
+      const url = source==='cf' ? (p.page_url||'https://www.curseforge.com') : 'https://modrinth.com/mod/'+slug;
+      api('/api/openurl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}).catch(()=>{});
+    });
+    if (source==='cf') renderCFVersions(); else await loadModrinthVersions();
+  }catch(e){
+    console.error('openMod:', e);
+    $('mDesc').textContent = 'Ошибка: '+e.message; $('mVersions').innerHTML='';
+  }
+}
+
+async function loadModrinthVersions(){
+  const slug = state.cur.slug;
+  const params = new URLSearchParams({slug});
+  if(!state.allVersions){
+    if($('loader').value) params.set('loader',$('loader').value);
+    if($('mc').value) params.set('mc',$('mc').value);
+  }
+  $('mVersions').innerHTML = '<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg></div>';
+  try{
+    const list = await api('/api/versions?'+params);
+    if(!list.length){ $('mVersions').innerHTML = '<div class="empty">Для этого загрузчика/версии ничего нет. Нажми «Показать все версии».</div>'; return; }
+    renderVersions(list, 'modrinth');
+  }catch(e){ $('mVersions').innerHTML = '<div class="empty">'+esc(e.message)+'</div>'; }
+}
+function renderCFVersions(){
+  let list = state.cfAllVersions;
+  if(!state.allVersions){
+    const L = $('loader').value, M = $('mc').value;
+    if(L) list = list.filter(v=>(v.loaders||[]).some(x=>String(x).toLowerCase()===L));
+    if(M) list = list.filter(v=>(v.game_versions||[]).some(x=>String(x)===M));
+  }
+  if(!list.length){ $('mVersions').innerHTML = '<div class="empty">Нет версий под фильтр. Нажми «Показать все версии».</div>'; return; }
+  renderVersions(list.slice(0,80), 'cf');
+}
+function renderVersions(list, source){
+  $('mVersions').innerHTML = list.slice(0,80).map(v=>{
+    const file = (v.files||[]).find(f=>f.primary) || (v.files||[])[0];
+    if(!file) return '';
+    const isInst = state.installed.has(file.filename);
+    const mcs = (v.game_versions||[]).slice(0,3).join(', ')+((v.game_versions||[]).length>3?'…':'');
+    const vid = source==='cf' ? String(v.file_id||'') : (v.id||'');
+    const vt = (v.version_type||'release');
+    return '<div class="vrow">'+
+      '<div class="vmain">'+
+        '<div class="vnum"><span style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.version_number)+'</span>'+
+        (vt!=='release'?'<span class="vtag '+vt+'">'+vt+'</span>':'')+'</div>'+
+        '<div class="vmeta">'+(v.loaders||[]).join(', ')+' · MC '+mcs+' · '+fmtDate(v.date_published)+' · '+fmtSize(file.size)+'</div>'+
+        '<div class="pbar"><i></i></div><div class="ptext"></div>'+
+      '</div>'+
+      '<button class="vbtn packadd" title="Добавить в мою сборку" data-url="'+file.url+'" data-fn="'+file.filename+'" data-vid="'+vid+'" data-vn="'+esc(v.version_number)+'"><svg class="ic"><use href="#i-plus"/></svg></button>'+
+      (isInst?'<button class="vbtn installed"><svg class="ic"><use href="#i-check"/></svg>в папке</button>'
+             :'<button class="vbtn" data-url="'+file.url+'" data-fn="'+file.filename+'" data-vid="'+vid+'" data-vn="'+esc(v.version_number)+'"><svg class="ic"><use href="#i-dl"/></svg>Скачать</button>')+
+      '</div>';
+  }).join('');
+  document.querySelectorAll('#mVersions .vbtn:not(.installed):not(.packadd)').forEach(b=>b.addEventListener('click',()=>downloadMod(b)));
+  document.querySelectorAll('#mVersions .vbtn.packadd').forEach(b=>b.addEventListener('click',()=>pickPackOpen(b)));
+}
+async function downloadMod(btn){
+  const url=btn.dataset.url, fn=btn.dataset.fn, vid=btn.dataset.vid, vn=btn.dataset.vn;
+  const row = btn.closest('.vrow');
+  const pbar=row.querySelector('.pbar'), ptext=row.querySelector('.ptext'), fill=row.querySelector('.pbar i');
+  btn.disabled=true;
+  pbar.classList.add('show'); ptext.classList.add('show');
+  let stop=false;
+  (async()=>{ while(!stop){ try{
+    const p=await api('/api/progress');
+    if(p.active&&p.total>0){ fill.style.width=p.percent.toFixed(1)+'%'; ptext.textContent=p.label+' — '+fmtSize(p.current)+' / '+fmtSize(p.total); }
+    else if(p.active){ ptext.textContent=p.label+' — '+fmtSize(p.current); }
+  }catch(e){} await new Promise(r=>setTimeout(r,250)); } })();
+  try{
+    await api('/api/download',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url,filename:fn,source:state.cur.source,project:state.cur.slug,title:state.cur.title||'',version_id:vid,version:vn,mc:$('mc').value})});
+    fill.style.width='100%'; btn.innerHTML='<svg class="ic"><use href="#i-check"/></svg>Скачано'; btn.className='vbtn done';
+    await refreshInstalled();
+    toast('✓ '+fn+' → папка mods');
+    setTimeout(()=>{pbar.classList.remove('show');ptext.classList.remove('show');},900);
+  }catch(e){
+    btn.disabled=false; btn.innerHTML='<svg class="ic"><use href="#i-dl"/></svg>Скачать';
+    pbar.classList.remove('show'); ptext.classList.remove('show');
+    if(e.message==='no_path'){ $('setupBar').classList.remove('hidden'); toast('Сначала укажи папку mods!',true); }
+    else toast(e.message,true);
+  } finally { stop=true; }
+}
+$('mStar').addEventListener('click',()=>{
+  if(!state.cur) return;
+  toggleFav(state.cur.source, state.cur.slug, state.cur.title||'', state.cur.icon||'').then(add=>{
+    $('mStar').classList.toggle('on',add);
+  });
+});
+$('mClose').addEventListener('click',()=>$('modal').classList.remove('show'));
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.remove('show');});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('modal').classList.remove('show'); });
+
+/* ============ ОБНОВЛЕНИЯ ============ */
+$('btnUpdates').addEventListener('click', checkUpdates);
+$('updClose').addEventListener('click', ()=>$('updPanel').classList.add('hidden'));
+$('updAll').addEventListener('click', async ()=>{
+  const rows = document.querySelectorAll('#updList .vrow[data-url]:not([data-url=""])');
+  for(const row of rows){ await updateOne(row); await new Promise(r=>setTimeout(r,400)); }
+  toast('Готово!'); checkUpdates();
+});
+async function checkUpdates(){
+  $('updPanel').classList.remove('hidden');
+  $('updList').innerHTML = '<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg>Проверяю версии…</div>';
+  $('updCount').textContent='';
+  try{
+    const d = await api('/api/updates');
+    const ups = (d.updates||[]).filter(u=>u.has_update&&u.url);
+    const total = (d.updates||[]).length;
+    $('updCount').textContent = ups.length ? ('— есть '+ups.length+' из '+total) : '— все свежие';
+    if(!total){ $('updList').innerHTML='<p style="color:var(--muted);font-size:13px">Скачай хотя бы один мод через CraftLoader — и я начну отслеживать его версии.</p>'; return; }
+    if(!ups.length){ $('updList').innerHTML='<p style="color:var(--accent);font-size:13px">✓ Обновлений нет — всё свежее!</p>'; return; }
+    $('updList').innerHTML = ups.map(u=>
+      '<div class="vrow" data-fn="'+esc(u.filename)+'" data-url="'+u.url+'" data-nf="'+esc(u.new_file||'')+'" data-vid="'+esc(u.version_id)+'" data-vn="'+esc(u.version)+'" data-src="'+u.source+'" data-proj="'+esc(u.project||'')+'" data-title="'+esc(u.title)+'">'+
+      '<div class="vmain"><div class="vnum">'+esc(u.title||u.filename)+'</div>'+
+      '<div class="vmeta">'+esc(u.current||'')+' → <b style="color:var(--accent)">'+esc(u.latest)+'</b></div>'+
+      '<div class="pbar"><i></i></div><div class="ptext"></div></div>'+
+      '<button class="vbtn"><svg class="ic"><use href="#i-up"/></svg>Обновить</button></div>').join('');
+    document.querySelectorAll('#updList .vrow .vbtn').forEach(b=>b.addEventListener('click',()=>updateOne(b.closest('.vrow'))));
+  }catch(e){ $('updList').innerHTML='<p style="color:var(--red)">'+esc(e.message)+'</p>'; }
+}
+async function updateOne(row){
+  const btn = row.querySelector('.vbtn'); if(!btn) return;
+  const pbar=row.querySelector('.pbar'), ptext=row.querySelector('.ptext'), fill=row.querySelector('.pbar i');
+  btn.disabled=true;
+  pbar.classList.add('show'); ptext.classList.add('show');
+  let stop=false;
+  (async()=>{ while(!stop){ try{ const p=await api('/api/progress');
+    if(p.active&&p.total>0){ fill.style.width=p.percent.toFixed(1)+'%'; ptext.textContent=fmtSize(p.current)+' / '+fmtSize(p.total); }
+  }catch(e){} await new Promise(r=>setTimeout(r,250)); } })();
+  try{
+    await api('/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      filename:row.dataset.fn, url:row.dataset.url, new_file:row.dataset.nf||'', source:row.dataset.src, project:row.dataset.proj,
+      title:row.dataset.title, version_id:row.dataset.vid, version:row.dataset.vn})});
+    btn.innerHTML='<svg class="ic"><use href="#i-check"/></svg>Обновлён'; btn.className='vbtn done'; row.dataset.url='';
+    await refreshInstalled();
+  }catch(e){ btn.disabled=false; btn.innerHTML='<svg class="ic"><use href="#i-up"/></svg>Обновить'; toast(e.message,true); }
+  finally{ stop=true; pbar.classList.remove('show'); ptext.classList.remove('show'); }
+}
+
+/* ============ СБОРКИ ============ */
+const PQUICK = ['Fabulously Optimized','Additive','Prominence II','Simply Optimized','Cobblemon','Create: Arcane Engineering','SkyFactory 5','RLCraft'];
+$('pQuick').innerHTML = PQUICK.map(q=>'<button class="qchip">'+q+'</button>').join('');
+document.querySelectorAll('#pQuick .qchip').forEach(b=>b.addEventListener('click',()=>{$('pq').value=b.textContent;resetPackPage();doPackSearch();}));
+let pTimer;
+$('pq').addEventListener('input',()=>{clearTimeout(pTimer);pTimer=setTimeout(()=>{resetPackPage();doPackSearch();},350);});
+$('pq').addEventListener('keydown',e=>{if(e.key==='Enter'){clearTimeout(pTimer);resetPackPage();doPackSearch();}});
+['pMc','pSort'].forEach(id=>$(id).addEventListener('change',()=>{resetPackPage();doPackSearch();}));
+function resetPackPage(){ state.packPage = 1; }
+
+async function doPackSearch(page){
+  if (page) state.packPage = page;
+  const q = $('pq').value.trim();
+  const params = new URLSearchParams({q, mc:$('pMc').value,
+    index: $('pSort').value==='relevance'&&!q ? 'downloads' : $('pSort').value,
+    type:'modpack', offset:(state.packPage-1)*PER_PAGE});
+  $('pStatus').textContent = 'Ищу сборки…';
+  $('pResults').innerHTML = '<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg>Загружаю…</div>';
+  $('packPager').innerHTML='';
+  try{
+    const d = await api('/api/search?'+params);
+    const hits = d.hits||[];
+    state.packTotal = d.total_hits||hits.length;
+    state.packPages = Math.min(Math.max(1, Math.ceil(state.packTotal/PER_PAGE)), 250);
+    $('pStatus').textContent = (q?('По «'+q+'» найдено '+fmtNum(state.packTotal)+' сборок'):'Популярные сборки · всего '+fmtNum(state.packTotal))
+      + ($('pMc').value?' · MC '+$('pMc').value:'')
+      + (state.packPage>1||state.packPages>1?' · страница '+state.packPage+' из '+state.packPages:'');
+    if(!hits.length){ $('pResults').innerHTML='<div class="empty"><svg class="e"><use href="#i-pack"/></svg>Ничего не нашлось.</div>'; return; }
+    $('pResults').innerHTML = hits.map(h=>{
+      const cats = (h.categories||[]).slice(0,3).map(c=>'<span class="cat">'+c+'</span>').join('');
+      return '<div class="card" data-slug="'+h.slug+'">'+
+        iconBox(h.icon_url, h.title, h.slug)+
+        '<div class="cbody"><div class="ctitle"><h3>'+esc(h.title)+'</h3><span class="dl"><svg class="ic" style="width:11px;height:11px"><use href="#i-dl"/></svg>'+fmtNum(h.downloads)+'</span></div>'+
+        '<div class="cats">'+cats+'</div><div class="cdesc">'+esc(h.description||'')+'</div></div></div>';
+    }).join('');
+    document.querySelectorAll('#pResults .card').forEach(c=>c.addEventListener('click',()=>openPack(c.dataset.slug)));
+    renderPager($('packPager'), state.packPage, state.packPages, p=>{ doPackSearch(p); $('pResults').scrollIntoView({behavior:'smooth',block:'start'}); });
+  }catch(e){ $('pResults').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+}
+
+async function openPack(slug){
+  state.cur = {source:'modrinth', slug};
+  $('modal').classList.add('show');
+  $('mTitleText').textContent='…'; $('mStats').innerHTML=''; $('mDesc').textContent='Загружаю…';
+  $('mVersions').innerHTML='<div class="spin"><svg class="ic lg spin"><use href="#i-loader"/></svg></div>';
+  $('mStar').classList.remove('on');
+  try{
+    const p = await api('/api/project?slug='+encodeURIComponent(slug));
+    state.cur.title = p.title;
+    $('mTitleText').innerHTML = esc(p.title)+' <span class="cat">Сборка</span>';
+    $('mIcon').outerHTML = iconBox(p.icon_url, p.title, slug).replace('class="icon"','class="icon" id="mIcon"');
+    const cats = (p.loaders||[]).join(', ');
+    $('mStats').innerHTML = '<span><svg class="ic" style="width:11px;height:11px"><use href="#i-dl"/></svg> <b>'+fmtNum(p.downloads)+'</b></span>'+(cats?'<span class="g">'+cats+'</span>':'');
+    $('mDesc').textContent = p.description||'';
+    $('mActions').innerHTML = '<button class="btn" id="mLink"><svg class="ic"><use href="#i-ext"/></svg>Открыть на Modrinth</button>';
+    $('mLink').addEventListener('click',()=>api('/api/openurl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:'https://modrinth.com/modpack/'+slug})}).catch(()=>{}));
+    const list = await api('/api/versions?slug='+encodeURIComponent(slug));
+    if(!list.length){ $('mVersions').innerHTML='<div class="empty">Версий нет.</div>'; return; }
+    $('mPackCtl').classList.remove('hidden');
+    $('mVersions').innerHTML = list.slice(0,30).map(v=>{
+      const file = (v.files||[]).find(f=>f.primary)||(v.files||[])[0];
+      if(!file) return '';
+      const mcs = (v.game_versions||[]).slice(0,3).join(', ');
+      return '<div class="vrow"><div class="vmain">'+
+        '<div class="vnum"><span style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.version_number)+'</span></div>'+
+        '<div class="vmeta">'+(v.loaders||[]).join(', ')+' · MC '+mcs+' · '+fmtDate(v.date_published)+' · '+fmtSize(file.size)+'</div>'+
+        '<div class="pbar"><i></i></div><div class="ptext"></div></div>'+
+        '<button class="vbtn pk-install" data-url="'+file.url+'" data-fn="'+file.filename+'" data-vn="'+esc(v.version_number)+'"><svg class="ic"><use href="#i-dl"/></svg>Установить</button></div>';
+    }).join('');
+    document.querySelectorAll('.pk-install').forEach(b=>b.addEventListener('click',()=>installPack(b)));
+  }catch(e){ $('mDesc').textContent='Ошибка: '+e.message; }
+}
+
+$('cfpGo').addEventListener('click', async ()=>{
+  const input = $('cfpInput').value.trim(); if(!input) return;
+  $('cfpGo').disabled=true;
+  try{
+    const d = await api('/api/cf/project?input='+encodeURIComponent(input));
+    openCFPack(d);
+  }catch(e){ toast('CurseForge: '+e.message,true); }
+  finally{ $('cfpGo').disabled=false; }
+});
+$('cfpInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('cfpGo').click();});
+function openCFPack(d){
+  state.cur = {source:'cf', slug:String(d.slug), title:d.title};
+  $('modal').classList.add('show');
+  $('mTitleText').innerHTML = esc(d.title)+' <span class="cat" style="background:rgba(248,138,76,.12);border-color:rgba(248,138,76,.4);color:#fb923c">CurseForge · Сборка</span>';
+  $('mIcon').outerHTML = iconBox(d.icon_url, d.title, d.slug).replace('class="icon"','class="icon" id="mIcon"');
+  $('mStats').innerHTML = '<span><svg class="ic" style="width:11px;height:11px"><use href="#i-dl"/></svg> <b>'+fmtNum(d.downloads)+'</b></span>';
+  $('mDesc').textContent = d.description||'';
+  $('mActions').innerHTML='';
+  const vers = (d.versions||[]).slice(0,30);
+  if(!vers.length){ $('mVersions').innerHTML='<div class="empty">Файлов сборки не нашёл.</div>'; return; }
+  $('mPackCtl').classList.remove('hidden');
+  $('mVersions').innerHTML = vers.map(v=>{
+    const file = (v.files||[])[0]; if(!file) return '';
+    return '<div class="vrow"><div class="vmain">'+
+      '<div class="vnum"><span style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.version_number)+'</span></div>'+
+      '<div class="vmeta">'+fmtDate(v.date_published)+' · '+fmtSize(file.size)+'</div>'+
+      '<div class="pbar"><i></i></div><div class="ptext"></div></div>'+
+      '<button class="vbtn pk-install" data-url="'+file.url+'" data-fn="'+file.filename+'" data-vn="'+esc(v.version_number)+'"><svg class="ic"><use href="#i-dl"/></svg>Установить</button></div>';
+  }).join('');
+  document.querySelectorAll('.pk-install').forEach(b=>b.addEventListener('click',()=>installPack(b)));
+}
+
+async function installPack(btn){
+  const url=btn.dataset.url, fn=btn.dataset.fn, vn=btn.dataset.vn;
+  $('modal').classList.remove('show');
+  showInstall((state.cur.title||'Сборка'), 'Версия '+vn);
+  try{
+    const res = await api('/api/modpack/install',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url, filename:fn, name:state.cur.title||vn, dest:$('pkDest').value, include_optional:$('pkOpt').checked})});
+    finishInstall(res);
+  }catch(e){ failInstall(e.message); }
+}
+
+let iStop=false;
+function showInstall(title, subtitle){
+  $('install').classList.add('show');
+  $('iTitle').textContent = title;
+  $('iPhase').textContent = subtitle||'Подготовка…';
+  $('iResult').classList.add('hidden'); $('iResult').innerHTML='';
+  $('iProgressBox').classList.remove('hidden'); $('iLog').classList.remove('hidden'); $('iLog').innerHTML='';
+  $('iOpen').classList.add('hidden'); $('iClose').classList.add('hidden');
+  iStop=false;
+  (async()=>{ while(!iStop){ try{
+    const p=await api('/api/progress');
+    $('iPhase').textContent = PHASES[p.phase]||p.phase||'…';
+    $('iLabel').textContent = p.label||'';
+    const done=p.items_done, tot=p.items_total;
+    $('iCount').textContent = tot>0 ? (done+' / '+tot) : (p.total>0?Math.round(p.percent)+'%':'');
+    if(p.total>0) $('iBar').style.width = p.percent.toFixed(1)+'%';
+    else $('iBar').style.width = (p.active? '12%':'0');
+    if(p.label && p.phase==='install') ilog(p.label, 'cur');
+  }catch(e){} await new Promise(r=>setTimeout(r,400)); } })();
+}
+function ilog(line, cls){
+  const log = $('iLog');
+  if(log.lastChild && log.lastChild.dataset && log.lastChild.dataset.cur) log.lastChild.remove();
+  const d = document.createElement('div'); d.textContent = line;
+  if(cls==='cur') d.dataset.cur = '1';
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+function finishInstall(res){
+  iStop=true;
+  $('iProgressBox').classList.add('hidden'); $('iLog').classList.add('hidden');
+  const r = $('iResult'); r.classList.remove('hidden');
+  let html;
+  if(res.file){
+    html = '<div class="big ok">✓ Архив скачан</div><div class="idir">'+res.file+'</div>';
+  } else {
+    html = '<div class="big ok">✓ Установлено файлов: '+((res.installed||[]).length)+'</div>';
+    html += '<div class="idir">'+(res.dir||'')+'</div>';
+    if(res.failed && res.failed.length) html += '<div style="color:var(--red);font-size:12.5px;margin-top:6px">Ошибок: '+res.failed.length+' — '+esc(res.failed.slice(0,3).join('; '))+'</div>';
+    if(res.skipped && res.skipped.length) html += '<details class="skipbox"><summary>Пропущено: '+res.skipped.length+'</summary><ul>'+res.skipped.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></details>';
+  }
+  r.innerHTML = html;
+  $('iOpen').classList.toggle('hidden', !res.dir);
+  $('iClose').classList.remove('hidden');
+  $('iOpen').onclick = ()=> api('/api/openfolder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:res.dir})}).catch(e=>toast(e.message,true));
+  state.instances = null;
+}
+function failInstall(msg){
+  iStop=true;
+  $('iProgressBox').classList.add('hidden'); $('iLog').classList.add('hidden');
+  const r = $('iResult'); r.classList.remove('hidden');
+  r.innerHTML = '<div class="big" style="color:var(--red)">Ошибка</div><div class="idir">'+esc(msg)+'</div>';
+  $('iClose').classList.remove('hidden');
+}
+$('iClose').addEventListener('click',()=>$('install').classList.remove('show'));
+
+async function loadCurated(){
+  try{
+    const d = await api('/api/curated');
+    $('curatedRow').innerHTML = (d.packs||[]).map(p=>
+      '<div class="icon"><svg class="ic xl"><use href="#i-zap"/></svg></div>'+
+      '<div class="info"><h3>'+p.name+'</h3><p>'+p.desc+'</p></div>'+
+      '<div class="ctl">'+
+        '<select id="curMc">'+state.tags.versions.slice(0,25).map(v=>'<option>'+v+'</option>').join('')+'</select>'+
+        '<select id="curLoader"><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option><option value="forge">Forge</option></select>'+
+        '<select id="curDest"><option value="mods">→ в папку mods</option><option value="instance">→ отдельная папка</option></select>'+
+        '<button class="btn primary" data-id="'+p.id+'"><svg class="ic"><use href="#i-dl"/></svg>Установить</button>'+
+      '</div>').join('');
+    document.querySelectorAll('#curatedRow .btn').forEach(b=>b.addEventListener('click',async()=>{
+      showInstall('Мини-сборка: оптимизация','MC '+$('curMc').value+' · '+$('curLoader').value);
+      try{
+        const res = await api('/api/curated',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:b.dataset.id, mc:$('curMc').value, loader:$('curLoader').value, dest:$('curDest').value})});
+        finishInstall(res);
+      }catch(e){ failInstall(e.message); }
+    }));
+  }catch(e){}
+}
+
+/* ============ ИГРА ============ */
+async function loadGame(){
+  try{
+    const d = await api('/api/instances');
+    state.instances = d;
+    const cl = (d.craftloader||[]).map(i=>instCard(i,'i-pack')); // v2.2: кнопка запуска внутри instCard
+    $('clInst').innerHTML = cl.length?cl.join(''):'<p style="color:var(--muted2);font-size:13px">Пока пусто — установи сборку в разделе «Сборки».</p>';
+    const mv = (d.versions||[]).map(i=>
+      '<div class="inst"><svg class="ic"><use href="#i-game"/></svg><div style="min-width:0"><b>'+esc(i.name)+'</b><span class="lbadge '+i.loader+'">'+i.loader+'</span></div>'+
+      '<button class="folder" data-p="'+esc(i.path)+'"><svg class="ic" style="width:14px;height:14px"><use href="#i-folder"/></svg></button></div>').join('');
+    $('mcVers').innerHTML = mv || '<p style="color:var(--muted2);font-size:13px">Профили в .minecraft не найдены.</p>';
+    const pr = (d.prism||[]).map(i=>'<div class="inst"><svg class="ic"><use href="#i-cube"/></svg><div style="min-width:0"><b>'+esc(i.name)+'</b><span>Prism</span></div><button class="folder" data-p="'+esc(i.path)+'"><svg class="ic" style="width:14px;height:14px"><use href="#i-folder"/></svg></button></div>').join('');
+    $('prismInst').innerHTML = pr || '<p style="color:var(--muted2);font-size:13px">Prism Launcher не найден.</p>';
+    document.querySelectorAll('#page-game .folder').forEach(b=>b.addEventListener('click',()=>{
+      api('/api/openfolder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:b.dataset.p})}).catch(e=>toast(e.message,true));
+    }));
+    document.querySelectorAll('#page-game .playmini').forEach(b=>b.addEventListener('click',()=>{
+      runGame({version:b.dataset.mc, loader:b.dataset.loader, loader_version:'', game_dir:'instance:'+b.dataset.run});
+    }));
+  }catch(e){ toast(e.message,true); }
+}
+function instCard(i, icon){
+  const runable = i.mc && ['fabric','quilt','vanilla'].includes(i.loader);
+  return '<div class="inst"><svg class="ic"><use href="#'+icon+'"/></svg><div style="min-width:0"><b>'+esc(i.name)+'</b><span>сборка'+(i.mc?' · MC '+esc(i.mc)+(i.loader&&i.loader!=='vanilla'?' · '+esc(i.loader):''):'')+'</span></div>'+
+    (runable?'<button class="playmini" title="Запустить" data-run="'+esc(i.name)+'" data-mc="'+esc(i.mc)+'" data-loader="'+esc(i.loader)+'"><svg class="ic" style="width:12px;height:12px"><use href="#i-play"/></svg>Запустить</button>':'')+
+    '<button class="folder" data-p="'+esc(i.path)+'"><svg class="ic" style="width:14px;height:14px"><use href="#i-folder"/></svg></button></div>';
+}
+/* ---- запуск Minecraft (v2.2) ---- */
+async function loadLaunchInfo(force){
+  try{
+    const d = await api('/api/launch/info');
+    state.launchInfo = d;
+    const vs = (d.versions||[]);
+    if(vs.length){
+      const cur = $('lnVer').value;
+      $('lnVer').innerHTML = vs.map(v=>'<option>'+esc(v.id)+'</option>').join('');
+      $('lnVer').value = ([...$('lnVer').options].some(o=>o.value===cur) && cur) ? cur : vs[0].id;
+    }
+    if(d.nickname && !$('lnNick').value) $('lnNick').value = d.nickname;
+    fillLoaderVers();
+    const j = d.java||{};
+    if(j.found){
+      $('lnJava').className='javachip ok';
+      $('lnJava').innerHTML='<svg class="ic" style="width:12px;height:12px"><use href="#i-check"/></svg> Java '+esc(j.version||'')+' <span class="jpath">'+esc(j.path||'')+'</span>';
+      $('lnJavaDl').classList.add('hidden');
+    }else{
+      $('lnJava').className='javachip warn';
+      $('lnJava').textContent='Java не найдена — скачаю сам при запуске';
+      $('lnJavaDl').classList.remove('hidden');
+    }
+    refreshLaunchDirs();
+  }catch(e){}
+}
+function fillLoaderVers(){
+  const key = $('lnLoader').value;
+  const list = key==='fabric' ? (state.launchInfo&&state.launchInfo.fabric||[]) : key==='quilt' ? (state.launchInfo&&state.launchInfo.quilt||[]) : [];
+  $('lnLVer').innerHTML = '<option value="">последняя стабильная</option>'+list.map(v=>'<option>'+esc(v)+'</option>').join('');
+}
+$('lnLoader').addEventListener('change', fillLoaderVers);
+
+function refreshLaunchDirs(){
+  const sel = $('lnDir'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Отдельная папка CraftLoader</option>'+
+    (state.mypacks||[]).map(p=>'<option value="instance:'+esc(p.name)+'">Сборка: '+esc(p.name)+'</option>').join('');
+  if(cur) sel.value = cur;
+}
+$('lnDir').addEventListener('change', ()=>{
+  const v = $('lnDir').value;
+  if(v.startsWith('instance:')){
+    const p = (state.mypacks||[]).find(x=>x.name===v.slice(9));
+    if(p){
+      if(p.mc && [...$('lnVer').options].some(o=>o.value===p.mc)) $('lnVer').value = p.mc;
+      if(['fabric','quilt','vanilla'].includes(p.loader)){ $('lnLoader').value = p.loader; fillLoaderVers(); }
+    }
+  }
+});
+
+async function runGame(over){
+  const req = Object.assign({
+    version: $('lnVer').value, loader: $('lnLoader').value, loader_version: $('lnLVer').value,
+    nickname: $('lnNick').value.trim()||'Steve', ram: +$('lnRam').value||4, game_dir: $('lnDir').value
+  }, over||{});
+  if(!req.version){ toast('Выбери версию Minecraft', true); return; }
+  showInstall('Запуск Minecraft', 'MC '+req.version+(req.loader&&req.loader!=='vanilla'?' · '+req.loader:''));
+  try{
+    const r = await api('/api/launch/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
+    finishLaunch(r, req);
+  }catch(e){
+    if(e.message==='java_not_found') failInstall('Java не найдена. Нажми «Скачать Java» ниже — поставлю рантайм от Mojang и повтори запуск.');
+    else failInstall(e.message);
+  }
+}
+function finishLaunch(r, req){
+  iStop=true;
+  $('iProgressBox').classList.add('hidden'); $('iLog').classList.add('hidden');
+  const res = $('iResult'); res.classList.remove('hidden');
+  res.innerHTML = '<div class="big ok">✓ Minecraft запущен!</div>'+
+    '<div class="idir">'+esc(r.game_dir||'')+'</div>'+
+    '<div style="color:var(--muted);font-size:12.5px;margin-top:8px">Java '+esc(r.java||'')+' · ник: <b>'+esc(req.nickname)+'</b> · PID '+r.pid+'</div>'+
+    '<div style="color:var(--muted2);font-size:12px;margin-top:8px">Первый запуск качает ~400 МБ и распаковывает файлы — окно игры появится через минуту-другую. Если не появится, смотри craftloader-launch.log в папке игры.</div>';
+  $('iOpen').classList.remove('hidden');
+  $('iOpen').onclick = ()=>api('/api/openfolder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:r.game_dir})}).catch(e=>toast(e.message,true));
+  $('iClose').classList.remove('hidden');
+  loadLaunchInfo();
+}
+$('btnRunGame').addEventListener('click', ()=>runGame());
+
+$('lnJavaDl').addEventListener('click', async ()=>{
+  showInstall('Java-рантайм Mojang', 'Скачиваю…');
+  try{
+    const r = await api('/api/launch/java',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    iStop=true;
+    $('iProgressBox').classList.add('hidden'); $('iLog').classList.add('hidden');
+    const res = $('iResult'); res.classList.remove('hidden');
+    res.innerHTML = '<div class="big ok">✓ Java установлена</div><div class="idir">'+esc(r.path||'')+'</div>';
+    $('iClose').classList.remove('hidden');
+    loadLaunchInfo();
+    toast('✓ Java готова');
+  }catch(e){ failInstall(e.message); }
+});
+
+/* ============ МОИ СБОРКИ (v2.2) ============ */
+async function loadMyPacks(force){
+  if(state.mypacks && !force) return state.mypacks;
+  try{ const d = await api('/api/packs'); state.mypacks = d.packs||[]; }catch(e){ state.mypacks = []; }
+  renderMyPacks(); refreshLaunchDirs(); renderLaunchPacks();
+  return state.mypacks;
+}
+/* карточки «запустить сборку» на странице «Игра» */
+function renderLaunchPacks(){
+  const g = $('lpMy'); if(!g) return;
+  const packs = state.mypacks||[];
+  if(!packs.length){
+    g.innerHTML = '<div class="lpempty">Своих сборок пока нет. Создай в разделе «Мои сборки» — или жми «＋» у версии любого мода, он попадёт в сборку.</div>';
+    return;
+  }
+  g.innerHTML = packs.map(p=>
+    '<div class="lpack">'+avatar(p.name,p.id)+
+    '<div class="lpbody"><b>'+esc(p.name)+'</b>'+
+    '<div class="lpmeta">MC '+(p.mc||'последняя')+' · '+(p.loader||'fabric')+' · '+p.mods.length+' мод(ов)</div></div>'+
+    '<button class="lpackgo" data-go="'+p.id+'"><svg class="ic" style="width:14px;height:14px"><use href="#i-play"/></svg>Запустить</button></div>').join('');
+  g.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+    const p = (state.mypacks||[]).find(x=>x.id===b.dataset.go);
+    if(p) installAndRun(p);
+  }));
+}
+function renderMyPacks(){
+  const g = $('mpGrid'); if(!g) return;
+  if(!state.mypacks.length){
+    g.innerHTML = '<div class="empty"><svg class="e"><use href="#i-layers"/></svg>Пока нет сборок. Жми «＋» у версии любого мода — или создай пустую кнопкой выше.</div>';
+    return;
+  }
+  g.innerHTML = state.mypacks.map(p=>
+    '<div class="card" data-id="'+p.id+'">'+
+    iconBox(null, p.name, p.id)+
+    '<div class="cbody"><div class="ctitle"><h3>'+esc(p.name)+'</h3></div>'+
+    '<div class="cats"><span class="cat">MC '+esc(p.mc||'—')+'</span>'+
+    (p.loader?'<span class="cat">'+esc(p.loader)+'</span>':'')+
+    '<span class="cat" style="color:var(--accent);border-color:rgba(74,222,128,.3)">'+p.mods.length+' мод(ов)</span></div>'+
+    (p.created?'<div class="cats"><span class="cat">'+esc(p.created)+'</span></div>':'')+
+    '<button class="lpackgo" data-go="'+p.id+'" title="Установить и запустить"><svg class="ic" style="width:14px;height:14px"><use href="#i-play"/></svg></button>'+
+    '</div></div>').join('');
+  document.querySelectorAll('#mpGrid .card').forEach(c=>c.addEventListener('click',()=>openPackDetail(c.dataset.id)));
+  document.querySelectorAll('#mpGrid .lpackgo').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    const p = (state.mypacks||[]).find(x=>x.id===b.dataset.go);
+    if(p) installAndRun(p);
+  }));
+}
+function uniqPackName(base){
+  let name = base, i = 2;
+  const names = new Set((state.mypacks||[]).map(p=>p.name));
+  while(names.has(name)){ name = base+' '+i; i++; }
+  return name;
+}
+async function createPack(name, mc, loader){
+  const r = await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'create', name, mc:mc||'', loader:loader||''})});
+  await loadMyPacks(true);
+  return r.pack;
+}
+$('mpNew').addEventListener('click', async ()=>{
+  try{
+    const mc = $('mc').value || (state.launchInfo&&state.launchInfo.versions&&state.launchInfo.versions[0]?state.launchInfo.versions[0].id:'');
+    const loader = ($('loader').value==='quilt')?'quilt':'fabric';
+    const p = await createPack(uniqPackName('Новая сборка'), mc, loader);
+    openPackDetail(p.id);
+  }catch(e){ toast(e.message,true); }
+});
+$('mpFromMods').addEventListener('click', async ()=>{
+  showInstall('Сборка из папки mods', 'Собираю список…');
+  try{
+    const r = await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'frommods', name:uniqPackName('Из папки mods')})});
+    iStop=true; $('install').classList.remove('show');
+    await loadMyPacks(true);
+    toast('✓ Сборка «'+r.pack.name+'»: '+r.pack.mods.length+' мод(ов)');
+    openPackDetail(r.pack.id);
+  }catch(e){ failInstall(e.message); }
+});
+
+/* --- детали сборки --- */
+function openPackDetail(id){
+  const p = (state.mypacks||[]).find(x=>x.id===id); if(!p) return;
+  state.curPack = p;
+  $('pkName').textContent = p.name;
+  $('pkMeta').innerHTML = '<span>MC <b>'+esc(p.mc||'—')+'</b></span><span class="g">'+esc(p.loader||'—')+'</span><span><b>'+p.mods.length+'</b> мод(ов)</span>'+(p.created?'<span>от '+esc(p.created)+'</span>':'');
+  $('pmName').value = p.name;
+  const vers = ((state.launchInfo&&state.launchInfo.versions)||[]).map(v=>v.id);
+  if(p.mc && !vers.includes(p.mc)) vers.unshift(p.mc);
+  $('pmMc').innerHTML = vers.slice(0,120).map(v=>'<option'+(v===p.mc?' selected':'')+'>'+esc(v)+'</option>').join('');
+  $('pmLoader').value = p.loader || 'fabric';
+  renderPackMods(p);
+  $('packModal').classList.add('show');
+}
+function renderPackMods(p){
+  $('pmMods').innerHTML = p.mods.length ? p.mods.map((m,i)=>
+    '<div class="pmrow">'+iconBox(m.icon, m.title, m.project)+
+    '<div style="min-width:0;flex:1"><b>'+esc(m.title)+'</b>'+
+    '<div class="vmeta">'+esc(m.version||'')+' · '+(m.source==='cf'?'CurseForge':'Modrinth')+'</div></div>'+
+    '<button class="btn danger" data-rm="'+i+'" title="Убрать из сборки"><svg class="ic"><use href="#i-trash"/></svg></button></div>').join('')
+    : '<div class="empty" style="padding:26px 0">Пусто. Закрой окно, найди мод и жми «＋» у нужной версии.</div>';
+  document.querySelectorAll('#pmMods [data-rm]').forEach(b=>b.addEventListener('click', async ()=>{
+    const m = state.curPack.mods[+b.dataset.rm]; if(!m) return;
+    try{
+      await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'removemod', id:state.curPack.id, mod:{filename:m.filename, version_id:m.version_id}})});
+      await loadMyPacks(true);
+      openPackDetail(state.curPack.id);
+    }catch(e){ toast(e.message,true); }
+  }));
+}
+$('pmClose').addEventListener('click',()=>$('packModal').classList.remove('show'));
+$('packModal').addEventListener('click',e=>{if(e.target===$('packModal'))$('packModal').classList.remove('show');});
+$('pmSave').addEventListener('click', async ()=>{
+  const p = state.curPack; if(!p) return;
+  const name = $('pmName').value.trim();
+  if(!name){ toast('Введи название', true); return; }
+  try{
+    await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'setmeta', id:p.id, name, mc:$('pmMc').value, loader:$('pmLoader').value})});
+    await loadMyPacks(true);
+    // после rename id тот же — открываем заново
+    const np = state.mypacks.find(x=>x.id===p.id);
+    if(np){ state.curPack = np; $('pkName').textContent = np.name; }
+    toast('✓ Сохранено');
+  }catch(e){ toast(e.message,true); }
+});
+$('pmDelete').addEventListener('click', async ()=>{
+  const p = state.curPack; if(!p) return;
+  try{
+    await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete', id:p.id})});
+    $('packModal').classList.remove('show');
+    await loadMyPacks(true);
+    toast('Сборка удалена');
+  }catch(e){ toast(e.message,true); }
+});
+$('pmInstall').addEventListener('click', async ()=>{
+  const p = state.curPack; if(!p) return;
+  showInstall('Сборка: '+p.name, 'Устанавливаю моды…');
+  try{
+    const res = await api('/api/packs/install',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:p.id, dest:'instance'})});
+    finishInstall(res);
+    loadMyPacks(true);
+  }catch(e){ failInstall(e.message); }
+});
+async function installAndRun(p){
+  if(!p) return;
+  showInstall('Сборка: '+p.name, 'Устанавливаю моды…');
+  try{
+    await api('/api/packs/install',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:p.id, dest:'instance'})});
+    const loader = ['fabric','quilt','vanilla'].includes(p.loader) ? p.loader : 'fabric';
+    let mc = p.mc;
+    if(!mc || ![...$('lnVer').options].some(o=>o.value===mc)){
+      if(!state.launchInfo) await loadLaunchInfo();
+      mc = (state.launchInfo&&state.launchInfo.versions&&state.launchInfo.versions[0]) ? state.launchInfo.versions[0].id : '1.20.1';
+    }
+    const req = {version:mc, loader, loader_version:'', nickname:$('lnNick').value.trim()||'Steve', ram:+$('lnRam').value||4, game_dir:'instance:'+p.name};
+    const r = await api('/api/launch/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
+    finishLaunch(r, req);
+    state.instances = null;
+  }catch(e){
+    if(e.message==='java_not_found') failInstall('Java не найдена. Скачай её на странице «Игра» и запусти сборку ещё раз.');
+    else failInstall(e.message);
+  }
+}
+$('pmRun').addEventListener('click', ()=>installAndRun(state.curPack));
+
+/* --- мини-модалка «добавить в сборку» --- */
+function pickPackOpen(btn){
+  const m = {
+    source: state.cur.source, project: state.cur.slug, title: state.cur.title||state.cur.slug,
+    version: btn.dataset.vn, version_id: btn.dataset.vid, filename: btn.dataset.fn, url: btn.dataset.url,
+    icon: state.cur.icon||''
+  };
+  state.pendingMod = m;
+  $('ppMod').innerHTML = '<b>'+esc(m.title)+'</b> · '+esc(m.version||'');
+  loadMyPacks().then(()=>{
+    $('ppList').innerHTML = state.mypacks.length ? state.mypacks.map(p=>
+      '<button class="pprow" data-id="'+p.id+'">'+avatar(p.name,p.id)+'<span>'+esc(p.name)+'</span><i>'+p.mods.length+'</i></button>').join('')
+      : '<p class="ppempty">Сборок пока нет — добавлю в новую:</p>';
+    $('pickPack').classList.add('show');
+  });
+}
+async function addPendingTo(packId){
+  const m = state.pendingMod; if(!m) return;
+  try{
+    const r = await api('/api/packs',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'addmod', id:packId, mod:m})});
+    await loadMyPacks(true);
+    $('pickPack').classList.remove('show');
+    const p = state.mypacks.find(x=>x.id===packId);
+    toast(r.dup ? 'Уже есть в «'+(p?p.name:'сборке')+'»' : '✓ Добавлено в «'+(p?p.name:'сборку')+'»');
+  }catch(e){ toast(e.message,true); }
+}
+document.addEventListener('click', e=>{
+  const row = e.target.closest && e.target.closest('#ppList .pprow');
+  if(row) addPendingTo(row.dataset.id);
+});
+$('ppClose').addEventListener('click',()=>$('pickPack').classList.remove('show'));
+$('pickPack').addEventListener('click',e=>{if(e.target===$('pickPack'))$('pickPack').classList.remove('show');});
+$('ppNew').addEventListener('click', async ()=>{
+  const m = state.pendingMod; if(!m) return;
+  try{
+    let mc = '';
+    (m.version||'').replace(/1\.(\d+)(\.(\d+))?/, (_,a,b,c)=>{ mc = b?(c?'1.'+a+'.'+b+c:'1.'+a+b):('1.'+a); return ''; });
+    const loader = m.source ? ($('loader').value==='quilt'?'quilt':'fabric') : 'fabric';
+    const p = await createPack(uniqPackName('Сборка '+(m.title||'')), mc, loader);
+    await addPendingTo(p.id);
+  }catch(e){ toast(e.message,true); }
+});
+
+/* ============ ИЗБРАННОЕ ============ */
+function renderFavs(){
+  const g = $('favGrid');
+  const list = state.favList||[];
+  if(!list.length){ g.innerHTML = '<div class="empty"><svg class="e"><use href="#i-star"/></svg>Пока пусто. Жми звёздочку на карточках модов.</div>'; return; }
+  g.innerHTML = list.map(f=>
+    '<div class="card" data-src="'+f.source+'" data-slug="'+esc(f.slug)+'">'+
+    '<button class="star on" data-fav="'+f.source+'|'+esc(f.slug)+'|'+esc(f.title)+'"><svg class="ic"><use href="#i-star"/></svg></button>'+
+    iconBox(f.icon, f.title, f.slug)+
+    '<div class="cbody"><div class="ctitle"><h3>'+esc(f.title)+'</h3></div>'+
+    '<div class="cats"><span class="cat">'+(f.source==='cf'?'CurseForge':'Modrinth')+'</span></div></div></div>').join('');
+  document.querySelectorAll('#favGrid .card').forEach(c=>c.addEventListener('click',()=>openMod(c.dataset.src, c.dataset.slug)));
+  document.querySelectorAll('#favGrid .star').forEach(s=>s.addEventListener('click',e=>{
+    e.stopPropagation();
+    const [src,slug,title]=s.dataset.fav.split('|');
+    toggleFav(src,slug,title).then(add=>{ if(!add) renderFavs(); });
+  }));
+}
+
+/* ============ НАСТРОЙКИ ============ */
+$('setEdit').addEventListener('click',()=>{
+  $('setEditRow').classList.toggle('hidden');
+  api('/api/config').then(c=>{ $('setPathInput').value = c.path||''; }).catch(()=>{});
+});
+$('setPathSave').addEventListener('click', async ()=>{
+  const p = $('setPathInput').value.trim(); if(!p) return;
+  try{
+    await api('/api/path',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});
+    await refreshConfig(); await refreshInstalled(); toast('Папка mods: '+p);
+    $('setEditRow').classList.add('hidden');
+  }catch(e){ toast(e.message,true); }
+});
+$('setPathInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('setPathSave').click();});
+$('setOpen').addEventListener('click',()=>api('/api/open').catch(e=>toast(e.message,true)));
+$('setOpenCfg').addEventListener('click',()=>{
+  api('/api/config')
+    .then(c=>api('/api/openfolder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:c.instances})}))
+    .catch(e=>toast(e.message,true));
+});
+
+/* ============ запуск ============ */
+(async function init(){
+  await Promise.all([refreshConfig(), refreshInstalled(), refreshFavs(), loadTags(), loadLaunchInfo(), loadMyPacks()]);
+  await loadCurated();
+  await doSearch();
+  await doPackSearch();
+})();
+</script>
+</body>
+</html>
